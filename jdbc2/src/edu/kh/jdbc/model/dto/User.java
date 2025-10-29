@@ -26,6 +26,7 @@ import lombok.ToString;
 @NoArgsConstructor // 기본생성자
 @AllArgsConstructor // 모든 매개변수가 있는 생성자
 @ToString // toString
+
 public class User {
 	private int userNo;
 	private String userId;
