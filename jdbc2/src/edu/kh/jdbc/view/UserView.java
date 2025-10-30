@@ -1,9 +1,15 @@
 package edu.kh.jdbc.view;
 
+import java.sql.Connection;
+import java.util.ArrayList;
 import java.util.InputMismatchException;
+import java.util.List;
 import java.util.Scanner;
 
+import edu.kh.jdbc.common.JDBCTemplate;
+import edu.kh.jdbc.model.dto.User;
 import edu.kh.jdbc.model.service.UserService;
+import oracle.jdbc.driver.parser.util.Array;
 
 // View : 사용자와 직접 상호작용하는 화면(UI)를 담당,
 // (사용자에게) 입력을 받고 결과를 출력하는 역할
@@ -54,7 +60,7 @@ public class UserView {
 					updateName();
 					break;
 				case 7:
-					insertUser2();
+					insertUser2(7);
 					break;
 				case 8:
 					multiInsertUser();
@@ -82,51 +88,183 @@ public class UserView {
 	}
 
 	/**
-	 * 1. User 등록(INSERT)
+	 * 1. User 등록 관련된 VIEW
 	 */
-	public void insertUser() {
+	public void insertUser() throws Exception {
+		System.out.println("\n====1. User 등록====\n");
+
+		System.out.print("ID : ");
+		String userId = sc.next();
+
+		System.out.print("PW : ");
+		String userPw = sc.next();
+
+		System.out.print("Name : ");
+		String userName = sc.next();
+
+		// 입력받은 값 3개를 한번에 묶어서 전달할 수 있도록
+		// User DTO 객체를 생성한 후 필드에 값을 세팅
+
+		User user = new User();
+
+		// setter 이용
+		user.setUserId(userId);
+		user.setUserPw(userPw);
+		user.setUserName(userName);
+
+		// 서비스 호출(INSERT) 후 결과 반환(int, DML은 결과 행의 갯수를 반환함) 받기
+		int result = service.insertUser(user);
+		// service 객체(UserService)에 있는 insertUser() 라는 이름의 메서드를 호출!
+
+		// 반환된 결과에 따라 출력할 내용 선택
+		if (result > 0) {
+			System.out.println("\n" + userId + " 사용자가 등록되었습니다.\n");
+
+		} else {
+			System.out.println("\n***등록 실패***\n");
+		}
 	}
 
 	/**
-	 * 2. User 전체 조회(SELECT)
+	 * 2. User 전체 조회 관련 View (SELECT)
 	 */
-	public void selectAll() {
+	public void selectAll() throws Exception {
+		System.out.println("\n====2. User 조회====\n");
+		// 서비스 호출(SELECT) 후 결과 반환(List<User>) 받기
+		List<User> list = service.selectAll();
+
+		if (list.isEmpty()) {
+			System.out.println("존재하지 않습니다.");
+			return;
+		}
+
+		for (User user : list) {
+			System.out.println(user.toString());
+		}
 	}
 
 	/**
-	 * 3. User 중 이름에 검색어가 포함된 회원 조회 (SELECT)
+	 * 3. User 중 이름에 검색어가 포함된 회원 조회 (SELECT) 검색어 입력 : 유
 	 */
-	public void selectName() {
+	public void selectName() throws Exception {
+		System.out.println("\n====3. 이름 조회====\n");
+
+		System.out.print("검색어 입력 : ");
+		String name = sc.next();
+
+		List<User> userList = service.searchUser(name);
+
+		if (userList.isEmpty()) {
+			System.out.println("존재하지 않습니다.");
+			return;
+		}
+
 	}
 
 	/**
-	 * 4. USER_NO를 입력 받아 일치하는 User 조회(SELECT)
+	 * 4. USER_NO를 입력 받아 일치하는 User 조회(SELECT) 딱 1행만 조회되거나 or 일치하는 것 못찾았거나
+	 * 
+	 * -- 찾았을 때 : User 객체 출력 -- 없을 때 : USER_NO가 일치하는 회원 없음
 	 */
-	public void selectUser() {
+	public void selectUser() throws Exception {
+		System.out.println("\n====4. 번호 조회====\n");
+
+		System.out.print("유저 번호 입력: ");
+		int number = sc.nextInt();
+
+		User user = service.searchByNum(number);
+
+		if (user != null)
+			System.out.println(user.toString());
+		else
+			System.out.println("USER_NO가 일치하는 회원 없음");
 	}
 
 	/**
-	 * 5. USER_NO를 입력 받아 일치하는 User 삭제(DELETE)
+	 * 5. USER_NO를 입력 받아 일치하는 User 삭제(DELETE) * DML이다!!
+	 * 
+	 * -- 삭제 성공했을 때 : 삭제 성공 -- 삭제 실패했을 때 : 사용자 번호가 일치하는 User가 존재하지 않음
 	 */
-	public void deleteUser() {
+	public void deleteUser() throws Exception {
+		System.out.println("\n====5. 번호 입력 후 삭제===\n");
+
+		System.out.print("유저 번호 입력 : ");
+		int number = sc.nextInt();
+		int result = service.deleteUser(number);
+
+		if (result > 0) {
+			System.out.println("\n***삭제 성공.***\n");
+
+		} else {
+			System.out.println("\n***사용자 번호가 일치하는 User가 존재하지 않음***\n");
+		}
 	}
 
 	/**
 	 * 6. ID, PW가 일치하는 회원이 있을 경우 이름 수정(UPDATE)
 	 */
-	public void updateName() {
+	public void updateName() throws Exception {
+		System.out.println("\n====6. 이름 수정===\n");
+
+		System.out.print("ID 입력 : ");
+		String id = sc.next();
+
+		System.out.print("PW 입력 : ");
+		String pw = sc.next();
+
+		System.out.println("변경할 이름 : ");
+		String name = sc.next();
+
+		int result = service.updateUser(id, pw, name);
+
+		if (result > 0) {
+			System.out.println("\n***사용자가 수정되었습니다.***\n");
+
+		} else {
+			System.out.println("\n***수정이 실패하였습니다.***\n");
+
+		}
 	}
 
 	/**
 	 * 7. User 등록(아이디 중복 검사)
 	 */
-	public void insertUser2() {
+	public void insertUser2(int num) throws Exception {
+		if (num == 7) {
+			System.out.println("\n===7. 회원 등록===\n");
+		}
+
+		System.out.print("ID 입력 : ");
+		String id = sc.next();
+
+		System.out.print("PW 입력 : ");
+		String pw = sc.next();
+
+		System.out.println("이름 입력 : ");
+		String name = sc.next();
+
+		int result = service.addUser(id, pw, name);
+
+		if (result > 0) {
+			System.out.println("회원 등록 성공!");
+		} else {
+			System.out.println("중복된 사용자가 존재합니다.");
+		}
 	}
 
 	/**
 	 * 8. 여러 User 등록하기
 	 */
-	public void multiInsertUser() {
-	}
+	public void multiInsertUser() throws Exception {
+		int input = 0;
 
+		System.out.println("\n===8. 여러 User 등록하기===\n");
+		System.out.print("인원 수 입력 : ");
+		input = sc.nextInt();
+		
+		for(int i = 0; i < input; i++) {
+			insertUser2(8);
+		}
+		
+	}
 }

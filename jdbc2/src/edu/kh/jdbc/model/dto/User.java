@@ -36,7 +36,4 @@ public class User {
 	// -> enrollDate를 왜 java.sql.Date 타입이 아니라 String으로 정했는가?
 	// -> DB 조회 시 날짜 데이터를 원하는 형태의 문자열로 변환하여 조회할 예정
 	// -> TO_CHAR() 이용 시 -> EX) 2025-10-28 16:18:51.000
-	
-	
-	
 }
