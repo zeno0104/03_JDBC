@@ -7,7 +7,6 @@ import java.sql.ResultSet;
 import java.sql.Statement;
 import java.util.Properties;
 
-import oracle.jdbc.oracore.OracleTypeROWID;
 
 /* JDBCTemplate
  * JDBC 관련 작업을 위한 코드를
