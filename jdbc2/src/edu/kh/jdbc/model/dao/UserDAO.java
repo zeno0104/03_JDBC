@@ -3,7 +3,6 @@ package edu.kh.jdbc.model.dao;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
@@ -148,7 +147,15 @@ public class UserDAO {
 
 	}
 
-	public User searchByNum(Connection conn, int number) throws Exception {
+	/**
+	 * 4. USER_NO를 입력받아 일치하는 User 조회 DAO
+	 * 
+	 * @param conn
+	 * @param number
+	 * @return
+	 * @throws Exception
+	 */
+	public User selectUser(Connection conn, int number) throws Exception {
 		User user = null;
 
 		try {
@@ -159,12 +166,11 @@ public class UserDAO {
 					WHERE USER_NO = ?
 					""";
 			pstmt = conn.prepareStatement(sql);
-			
+
 			pstmt.setInt(1, number);
 			rs = pstmt.executeQuery();
-			
-			
-			while (rs.next()) {
+
+			if (rs.next()) {
 				int userNo = rs.getInt("USER_NO");
 				String userId = rs.getString("USER_ID");
 				String userPw = rs.getString("USER_PW");
@@ -172,9 +178,7 @@ public class UserDAO {
 				String enrollDate = rs.getString("ENROLL_DATE");
 
 				user = new User(userNo, userId, userPw, userName, enrollDate);
-
 			}
-			
 		} finally {
 			close(rs);
 			close(pstmt);
@@ -182,107 +186,172 @@ public class UserDAO {
 		return user;
 	}
 
-	public int deleteUser(Connection conn, int number) throws Exception{
-		
+	/**
+	 * 5. USER_NO를 입력 받아 일치하는 User 삭제하는 DAO
+	 * 
+	 * @param conn
+	 * @param number
+	 * @return
+	 * @throws Exception
+	 */
+	public int deleteUser(Connection conn, int number) throws Exception {
+
 		int result = 0;
-		
+
 		try {
 			String sql = """
 					DELETE FROM TB_USER
 					WHERE USER_NO = ?
 					""";
-			
+
 			pstmt = conn.prepareStatement(sql);
 			pstmt.setInt(1, number);
 			result = pstmt.executeUpdate();
-			
+
 		} finally {
 			close(pstmt);
 		}
-		
+
 		return result;
 	}
 
-	public int updateUser(Connection conn, String id, String pw, String name) throws Exception{
+	/**
+	 * 6-1 ID, PW가 일치하는 회원의 USER_NO 조회 DAO
+	 * 
+	 * @param conn
+	 * @return
+	 */
+	public int selectUser(Connection conn, String userId, String userPw) throws Exception {
+		int userNo = 0;
+
+		try {
+
+			String sql = """
+					SELECT USER_NO
+					FROM TB_USER
+					WHERE USER_ID = ? AND USER_PW = ?
+					""";
+
+			pstmt = conn.prepareStatement(sql);
+
+			pstmt.setString(1, userId);
+			pstmt.setString(2, userPw);
+
+			rs = pstmt.executeQuery();
+
+			if (rs.next()) {
+				userNo = rs.getInt("USER_NO");
+			}
+
+		} finally {
+			close(rs);
+			close(pstmt);
+		}
+
+		return userNo;
+	}
+
+	/**
+	 * 6-2
+	 * 
+	 * @param conn
+	 * @param id
+	 * @param pw
+	 * @param name
+	 * @return
+	 * @throws Exception
+	 */
+	public int updateUser(Connection conn, int userNo, String userName) throws Exception {
 		int result = 0;
-		
+
 		try {
 			String sql = """
 					UPDATE TB_USER
 					SET USER_NAME = ?
-					WHERE USER_ID = ? AND USER_PW = ?
+					WHERE USER_NO = ?
 					""";
 			pstmt = conn.prepareStatement(sql);
-			
-			pstmt.setString(1, name);
-			pstmt.setString(2, id);
-			pstmt.setString(3, pw);
-			
+
+			pstmt.setString(1, userName);
+			pstmt.setInt(2, userNo);
+
 			result = pstmt.executeUpdate();
-			
+
 		} finally {
 			close(pstmt);
 		}
-		
+
 		return result;
 	}
 
-	public int addUser(Connection conn, String id, String pw, String name) throws Exception{
+	public int idCheck(Connection conn, String id) throws Exception {
+
+		int count = 0;
+
+		try {
+			String sql = """
+					SELECT COUNT(*)
+					FROM TB_USER
+					WHERE USER_ID = ?
+					""";
+			pstmt = conn.prepareStatement(sql);
+			pstmt.setString(1, id);
+			
+			rs = pstmt.executeQuery();
+			
+			if(rs.next()) {
+				count = rs.getInt(1);
+			}
+			
+		} finally {
+			close(rs);
+			close(pstmt);
+		}
+
+		return count;
+	}
+
+	public int addUser(Connection conn, String id, String pw, String name) throws Exception {
 		int result = 0;
-		
+
 		try {
 			String sql1 = """
 					SELECT USER_ID
 					FROM TB_USER
 					WHERE USER_ID = ?
 					""";
-			
+
 			pstmt = conn.prepareStatement(sql1);
 			pstmt.setString(1, id);
-			
+
 			rs = pstmt.executeQuery();
-			
+
 			boolean flag = false;
-			
-			while(rs.next()) {
+
+			while (rs.next()) {
 				flag = true;
 			}
-			
-			if(flag) {
+
+			if (flag) {
 				return 0;
 			}
 
-			
 			String sql2 = """
 					INSERT INTO TB_USER
 					VALUES(SEQ_USER_NO.NEXTVAL, ?, ?, ?, DEFAULT)
 					""";
 			pstmt = conn.prepareStatement(sql2);
-			
+
 			pstmt.setString(1, id);
 			pstmt.setString(2, pw);
 			pstmt.setString(3, name);
-			
+
 			result = pstmt.executeUpdate();
-			
-			
-		} finally{
+
+		} finally {
 			close(pstmt);
 		}
 		return result;
 	}
+
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-

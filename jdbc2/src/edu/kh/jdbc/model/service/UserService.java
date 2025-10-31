@@ -59,6 +59,11 @@ public class UserService {
 		return list;
 	}
 
+	/** 3. 
+	 * @param name
+	 * @return
+	 * @throws Exception
+	 */
 	public List<User> searchUser(String name) throws Exception {
 		// 1. 커넥션 생성
 		Connection conn = getConnection();
@@ -72,14 +77,24 @@ public class UserService {
 		return list;
 	}
 
-	public User searchByNum(int number) throws Exception{
+	/** 4. USER_NO를 입력 받아 일치하는 User 조회 서비스
+	 * @param number
+	 * @return
+	 * @throws Exception
+	 */
+	public User selectUser(int number) throws Exception{
 		Connection conn = getConnection();
 		
-		User user = dao.searchByNum(conn, number);
+		User user = dao.selectUser(conn, number);
 		close(conn);
 		return user;
 	}
 
+	/** 5. USER_NO를 입력 받아 일치하는 User 삭제
+	 * @param number
+	 * @return
+	 * @throws Exception
+	 */
 	public int deleteUser(int number) throws Exception{
 		Connection conn = getConnection();
 		
@@ -98,21 +113,68 @@ public class UserService {
 		return result;
 	}
 
-	public int updateUser(String id, String pw, String name) throws Exception{
+	/** 6. ID, PW가 일치하는 회원이 있을 경우 이름 수정(Service)
+	 * @param id
+	 * @param pw
+	 * @param name
+	 * @return
+	 * @throws Exception
+	 */
+	
+	/** 6-1
+	 * @param userId
+	 * @param userPw
+	 * @return
+	 * @throws Exception
+	 */
+	public int selectUserNo(String userId, String userPw) throws Exception{
 		Connection conn = getConnection();
 		
-		int result = dao.updateUser(conn, id, pw, name);
+		int userNo = dao.selectUser(conn, userId, userPw);
 		
-		if(result > 0) {
-			 commit(conn);
-		} else {
-			rollback(conn);
-		}
 		close(conn);
+		return userNo;
+	}
+	/** 6-2 
+	 * @param id
+	 * @param userNo
+	 * @return
+	 */
+	public int updateUser(int userNo, String userName) throws Exception{
+		Connection conn = getConnection();
+		int result = 0;
+		try {
+			result = dao.updateUser(conn, userNo, userName);
+			if(result > 0) {
+				 commit(conn);
+			} else {
+				rollback(conn);
+			}
+		} finally {
+			close(conn);
+		}
+		
 		
 		return result;
 	}
-
+	/** 7. 아이디 중복 확인 서비스
+	 * @param id
+	 * @return
+	 * @throws Exception
+	 */
+	public int idCheck(String id) throws Exception{
+		Connection conn = getConnection();
+		
+		int count = 0;
+		
+		try {
+			count = dao.idCheck(conn, id);
+			
+		} finally {
+			close(conn);
+		}
+		return count;
+	}
 	public int addUser(String id, String pw, String name) throws Exception {
 		Connection conn = getConnection();
 		
@@ -127,6 +189,31 @@ public class UserService {
 		
 		return result;
 	}
+
+	public int multiUserInsert(List<User> userList) throws Exception{
+		Connection conn = getConnection();
+		int count = 0;
+		
+		try {
+			for(User user : userList) {
+				int result = dao.insertUser(conn, user);
+				count += result;
+			}
+			
+			// 전체 삽입 성공 시 commit / 아니면 rollback(일부 삽입, 전체 실패)
+			if(count == userList.size()) {
+				commit(conn);
+			} else {
+				rollback(conn);
+			}
+		} finally {
+			close(conn);
+		}
+		
+		return count;
+	}
+	
+	
 }
 
 
